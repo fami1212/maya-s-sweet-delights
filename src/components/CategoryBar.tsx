@@ -1,4 +1,5 @@
-import { categories } from "@/data/menuData";
+import { useCategories } from "@/hooks/useMenu";
+import type { Category } from "@/hooks/useMenu";
 
 interface CategoryBarProps {
   activeCategory: string;
@@ -6,9 +7,11 @@ interface CategoryBarProps {
 }
 
 const CategoryBar = ({ activeCategory, onSelect }: CategoryBarProps) => {
+  const { data: categories, isLoading } = useCategories();
+
   return (
     <div className="sticky top-[61px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container mx-auto px-4 py-3 overflow-x-auto scrollbar-hide">
+      <div className="container mx-auto px-4 py-3 overflow-x-auto">
         <div className="flex gap-2 min-w-max">
           <button
             onClick={() => onSelect("all")}
@@ -20,7 +23,7 @@ const CategoryBar = ({ activeCategory, onSelect }: CategoryBarProps) => {
           >
             Tout 🍽️
           </button>
-          {categories.map((cat) => (
+          {!isLoading && categories?.map((cat: Category) => (
             <button
               key={cat.id}
               onClick={() => onSelect(cat.id)}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import type { MenuItem, CartItem } from "@/data/menuData";
+import type { MenuItem, CartItem } from "@/hooks/useMenu";
 
 interface CartContextType {
   items: CartItem[];
