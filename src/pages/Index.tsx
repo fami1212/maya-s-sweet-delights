@@ -1,16 +1,38 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useRef } from "react";
+import { CartProvider } from "@/context/CartContext";
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import MenuSection from "@/components/MenuSection";
+import CartDrawer from "@/components/CartDrawer";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const IndexContent = () => {
+  const [cartOpen, setCartOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const scrollToMenu = () => {
+    menuRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      <Navbar onCartClick={() => setCartOpen(true)} />
+      <HeroSection onOrderClick={scrollToMenu} />
+      <div ref={menuRef}>
+        <MenuSection />
+      </div>
+      <footer className="bg-secondary py-8 text-center">
+        <p className="font-heading text-xl text-secondary-foreground">Maya's</p>
+        <p className="text-sm text-muted-foreground mt-1">Salon de thé — Avec amour 💖</p>
+      </footer>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 };
 
-const Index = PlaceholderIndex;
+const Index = () => (
+  <CartProvider>
+    <IndexContent />
+  </CartProvider>
+);
 
 export default Index;
