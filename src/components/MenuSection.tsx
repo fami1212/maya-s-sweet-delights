@@ -1,27 +1,42 @@
-import { useState, useRef } from "react";
-import { menuItems, categories } from "@/data/menuData";
+import { useState } from "react";
+import { useMenuItems, useCategories } from "@/hooks/useMenu";
 import CategoryBar from "./CategoryBar";
 import MenuItemCard from "./MenuItemCard";
 
 const MenuSection = () => {
   const [activeCategory, setActiveCategory] = useState("all");
-  const ref = useRef<HTMLDivElement>(null);
+  const { data: items, isLoading: loadingItems } = useMenuItems();
+  const { data: categories } = useCategories();
+
+  if (loadingItems) {
+    return (
+      <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
+        Chargement du menu...
+      </div>
+    );
+  }
 
   const filtered = activeCategory === "all"
-    ? menuItems
-    : menuItems.filter((i) => i.category === activeCategory);
+    ? items || []
+    : (items || []).filter((i) => i.category_id === activeCategory);
 
   const grouped = activeCategory === "all"
-    ? categories
+    ? (categories || [])
         .map((cat) => ({
           ...cat,
-          items: menuItems.filter((i) => i.category === cat.id),
+          items: (items || []).filter((i) => i.category_id === cat.id),
         }))
         .filter((g) => g.items.length > 0)
-    : [{ id: activeCategory, name: categories.find((c) => c.id === activeCategory)?.name || "", emoji: categories.find((c) => c.id === activeCategory)?.emoji || "", items: filtered }];
+    : [{
+        id: activeCategory,
+        name: categories?.find((c) => c.id === activeCategory)?.name || "",
+        emoji: categories?.find((c) => c.id === activeCategory)?.emoji || "",
+        sort_order: 0,
+        items: filtered,
+      }];
 
   return (
-    <div ref={ref}>
+    <div>
       <CategoryBar activeCategory={activeCategory} onSelect={setActiveCategory} />
       <div className="container mx-auto px-4 py-8">
         <h2 className="font-heading text-3xl font-bold text-foreground mb-6">Notre Menu</h2>

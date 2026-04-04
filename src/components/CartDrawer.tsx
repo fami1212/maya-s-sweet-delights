@@ -1,6 +1,8 @@
 import { X, Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface CartDrawerProps {
   open: boolean;
@@ -9,12 +11,53 @@ interface CartDrawerProps {
 
 const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
   const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (items.length === 0) return;
-    toast.success("Commande envoyée ! Merci 💖");
-    clearCart();
-    onClose();
+    if (!customerName.trim() || !customerPhone.trim()) {
+      toast.error("Veuillez remplir votre nom et numéro de téléphone");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          customer_name: customerName.trim(),
+          customer_phone: customerPhone.trim(),
+          total: totalPrice,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = items.map((item) => ({
+        order_id: order.id,
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price,
+      }));
+
+      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
+      if (itemsError) throw itemsError;
+
+      toast.success("Commande envoyée avec succès ! 💖");
+      clearCart();
+      setCustomerName("");
+      setCustomerPhone("");
+      onClose();
+    } catch (err) {
+      toast.error("Erreur lors de la commande. Réessayez.");
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,10 +85,10 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
             ) : (
               items.map((item) => (
                 <div key={item.id} className="bg-card rounded-lg border border-border p-3 flex items-center gap-3">
-                  <span className="text-2xl">{item.emoji}</span>
+                  <span className="text-2xl">{item.categories?.emoji || "🍽️"}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-card-foreground truncate">{item.name}</p>
-                    <p className="text-sm text-primary font-bold">{(item.price * item.quantity).toFixed(2)} €</p>
+                    <p className="text-sm text-primary font-bold">{(Number(item.price) * item.quantity).toFixed(2)} €</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 rounded-full bg-secondary hover:bg-accent transition-colors">
@@ -66,15 +109,32 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
 
           {items.length > 0 && (
             <div className="p-4 border-t border-border space-y-3">
+              <input
+                type="text"
+                placeholder="Votre nom"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+                maxLength={100}
+              />
+              <input
+                type="tel"
+                placeholder="Numéro de téléphone"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+                maxLength={20}
+              />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
                 <span className="text-primary">{totalPrice.toFixed(2)} €</span>
               </div>
               <button
                 onClick={handleOrder}
-                className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold text-lg hover:opacity-90 transition-all shadow-lg"
+                disabled={submitting}
+                className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold text-lg hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
               >
-                Commander 💖
+                {submitting ? "Envoi..." : "Commander 💖"}
               </button>
             </div>
           )}
