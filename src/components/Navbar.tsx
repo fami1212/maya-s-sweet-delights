@@ -15,7 +15,7 @@ const Navbar = ({ onCartClick }: NavbarProps) => {
         <img src={logo} alt="Maya's" className="h-12 w-auto" />
         <button
           onClick={onCartClick}
-          className="relative p-2 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+          className="relative p-2 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity hidden md:flex"
         >
           <ShoppingCart className="h-5 w-5" />
           {totalItems > 0 && (

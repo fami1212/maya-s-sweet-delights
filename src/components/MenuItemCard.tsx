@@ -23,7 +23,7 @@ const MenuItemCard = ({ item }: { item: MenuItem }) => {
       <div className="flex-1 min-w-0">
         <h3 className="font-heading font-semibold text-card-foreground truncate">{item.name}</h3>
         <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
-        <p className="text-primary font-bold mt-1">{Number(item.price).toFixed(2)} €</p>
+        <p className="text-primary font-bold mt-1">{Number(item.price).toLocaleString()} FCFA</p>
       </div>
       <button
         onClick={handleAdd}

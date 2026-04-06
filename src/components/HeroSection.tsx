@@ -14,7 +14,7 @@ const HeroSection = ({ onOrderClick }: HeroSectionProps) => {
           Maya's
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-md mx-auto">
-          Salon de thé — Crêpes, Bubble Tea & Gourmandises
+          Crêperie • Fast Food • Glacier
         </p>
         <button
           onClick={onOrderClick}

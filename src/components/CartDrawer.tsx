@@ -24,21 +24,22 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
 
     setSubmitting(true);
     try {
-      const { data: order, error: orderError } = await supabase
+      const orderId = crypto.randomUUID();
+
+      const { error: orderError } = await supabase
         .from("orders")
         .insert({
+          id: orderId,
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
           total: totalPrice,
           status: "pending",
-        })
-        .select()
-        .single();
+        });
 
       if (orderError) throw orderError;
 
       const orderItems = items.map((item) => ({
-        order_id: order.id,
+        order_id: orderId,
         menu_item_id: item.id,
         quantity: item.quantity,
         unit_price: item.price,
@@ -88,7 +89,7 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
                   <span className="text-2xl">{item.categories?.emoji || "🍽️"}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-card-foreground truncate">{item.name}</p>
-                    <p className="text-sm text-primary font-bold">{(Number(item.price) * item.quantity).toFixed(2)} €</p>
+                    <p className="text-sm text-primary font-bold">{(Number(item.price) * item.quantity).toLocaleString()} FCFA</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 rounded-full bg-secondary hover:bg-accent transition-colors">
@@ -127,7 +128,7 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
               />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary">{totalPrice.toFixed(2)} €</span>
+                <span className="text-primary">{totalPrice.toLocaleString()} FCFA</span>
               </div>
               <button
                 onClick={handleOrder}
