@@ -36,7 +36,7 @@ const MenuSection = () => {
       }];
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <CategoryBar activeCategory={activeCategory} onSelect={setActiveCategory} />
       <div className="container mx-auto px-4 py-8">
         <h2 className="font-heading text-3xl font-bold text-foreground mb-6">Notre Menu</h2>

@@ -93,28 +93,28 @@ const ChatBot = () => {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 md:bottom-6 right-4 z-50 p-4 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all"
+        className="fixed bottom-[4.5rem] md:bottom-6 right-4 z-40 p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all"
         aria-label="Ouvrir le chat"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-5 w-5" />
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] h-[450px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground">
-        <span className="font-heading font-semibold">Maya's Assistant 💬</span>
+    <div className="fixed inset-0 z-50 md:inset-auto md:bottom-6 md:right-4 md:w-[360px] md:h-[480px] md:rounded-2xl bg-card border border-border shadow-2xl flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground flex-shrink-0">
+        <span className="font-heading font-semibold text-sm">Maya's Assistant 💬</span>
         <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-primary-foreground/20">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+              className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm break-words ${
                 m.role === "user"
                   ? "bg-primary text-primary-foreground rounded-br-sm"
                   : "bg-secondary text-secondary-foreground rounded-bl-sm"
@@ -133,15 +133,15 @@ const ChatBot = () => {
         )}
       </div>
 
-      <div className="p-3 border-t border-border flex gap-2">
+      <div className="p-3 border-t border-border flex gap-2 flex-shrink-0">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="Votre question..."
-          className="flex-1 px-3 py-2 rounded-full border border-border bg-background text-foreground text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+          className="flex-1 min-w-0 px-3 py-2 rounded-full border border-border bg-background text-foreground text-sm focus:ring-2 focus:ring-primary focus:outline-none"
         />
-        <button onClick={send} disabled={loading} className="p-2 rounded-full bg-primary text-primary-foreground disabled:opacity-50">
+        <button onClick={send} disabled={loading} className="p-2 rounded-full bg-primary text-primary-foreground disabled:opacity-50 flex-shrink-0">
           <Send className="h-4 w-4" />
         </button>
       </div>
