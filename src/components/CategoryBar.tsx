@@ -11,11 +11,11 @@ const CategoryBar = ({ activeCategory, onSelect }: CategoryBarProps) => {
 
   return (
     <div className="sticky top-[61px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container mx-auto px-4 py-3 overflow-x-auto">
-        <div className="flex gap-2 min-w-max">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <button
             onClick={() => onSelect("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
               activeCategory === "all"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "bg-secondary text-secondary-foreground hover:bg-accent"
@@ -27,7 +27,7 @@ const CategoryBar = ({ activeCategory, onSelect }: CategoryBarProps) => {
             <button
               key={cat.id}
               onClick={() => onSelect(cat.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                 activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-secondary text-secondary-foreground hover:bg-accent"
