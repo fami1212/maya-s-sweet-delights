@@ -156,8 +156,8 @@ const AdminMenu = () => {
             />
             <input
               type="number"
-              step="0.01"
-              placeholder="Prix (€)"
+              step="1"
+              placeholder="Prix (FCFA)"
               value={form.price}
               onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
               required
@@ -227,7 +227,7 @@ const AdminMenu = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">{Number(item.price).toFixed(2)} €</p>
+                      <p className="text-sm text-muted-foreground">{Number(item.price).toLocaleString()} FCFA</p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button onClick={() => toggleAvailable(item)} className={`px-2 py-1 text-xs rounded-full ${item.available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>

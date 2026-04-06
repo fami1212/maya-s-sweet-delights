@@ -47,7 +47,8 @@ const AdminOrders = () => {
   useEffect(() => { loadOrders(); }, []);
 
   const viewOrder = async (orderId: string) => {
-    setSelectedOrder(orderId);
+    setSelectedOrder(selectedOrder === orderId ? null : orderId);
+    if (selectedOrder === orderId) return;
     const { data } = await supabase
       .from("order_items")
       .select("*, menu_items(name)")
@@ -107,7 +108,7 @@ const AdminOrders = () => {
                   <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("fr-FR")}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-primary">{Number(order.total).toFixed(2)} €</span>
+                  <span className="font-bold text-primary">{Number(order.total).toLocaleString()} FCFA</span>
                   <button onClick={() => viewOrder(order.id)} className="p-2 rounded-full hover:bg-secondary transition-colors">
                     <Eye className="h-4 w-4" />
                   </button>
@@ -128,7 +129,7 @@ const AdminOrders = () => {
                   {orderItems.map((oi) => (
                     <div key={oi.id} className="flex justify-between text-sm">
                       <span>{oi.quantity}x {oi.menu_items?.name || "Article"}</span>
-                      <span className="text-muted-foreground">{(Number(oi.unit_price) * oi.quantity).toFixed(2)} €</span>
+                      <span className="text-muted-foreground">{(Number(oi.unit_price) * oi.quantity).toLocaleString()} FCFA</span>
                     </div>
                   ))}
                 </div>
