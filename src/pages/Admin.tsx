@@ -9,7 +9,7 @@ import logo from "@/assets/mayas-logo.png";
 
 const AdminPage = () => {
   const { session, isAdmin, loading, signIn, signOut } = useAdminAuth();
-  const [tab, setTab] = useState<"orders" | "menu">("orders");
+  const [tab, setTab] = useState<"orders" | "menu" | "qrcodes">("orders");
 
   if (loading) {
     return (
