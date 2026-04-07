@@ -132,14 +132,17 @@ async function handlePlaceOrder(args: {
   if (args.table_number) noteParts.push(`Table ${args.table_number}`);
   if (args.notes) noteParts.push(args.notes);
 
-  const { error: orderError } = await supabase.from("orders").insert({
+  const orderData: any = {
     id: orderId,
     customer_name: args.customer_name,
     customer_phone: args.customer_phone,
     total,
     status: "pending",
     notes: noteParts.join(" | "),
-  });
+  };
+  if (args.table_number) orderData.table_number = args.table_number;
+
+  const { error: orderError } = await supabase.from("orders").insert(orderData);
   if (orderError) throw new Error(`Erreur commande: ${orderError.message}`);
 
   const orderItems = args.items.map((item) => ({
