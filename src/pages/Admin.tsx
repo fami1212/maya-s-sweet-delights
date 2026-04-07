@@ -83,6 +83,10 @@ const AdminPage = () => {
             <UtensilsCrossed className="h-5 w-5" />
             <span className="text-[10px] font-medium">Menu</span>
           </button>
+          <button onClick={() => setTab("qrcodes")} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${tab === "qrcodes" ? "text-primary" : "text-muted-foreground"}`}>
+            <QrCode className="h-5 w-5" />
+            <span className="text-[10px] font-medium">QR</span>
+          </button>
           <button onClick={signOut} className="flex flex-col items-center gap-0.5 px-3 py-1 text-muted-foreground">
             <LogOut className="h-5 w-5" />
             <span className="text-[10px] font-medium">Déconnexion</span>
