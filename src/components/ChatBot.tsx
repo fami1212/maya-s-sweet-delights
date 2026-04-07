@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -120,7 +121,13 @@ const ChatBot = () => {
                   : "bg-secondary text-secondary-foreground rounded-bl-sm"
               }`}
             >
-              {m.content}
+              {m.role === "user" ? (
+                m.content
+              ) : (
+                <div className="prose prose-sm max-w-none [&>p]:m-0 [&>ul]:m-0 [&>ol]:m-0 [&>li]:m-0">
+                  <ReactMarkdown>{m.content}</ReactMarkdown>
+                </div>
+              )}
             </div>
           </div>
         ))}
