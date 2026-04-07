@@ -105,6 +105,7 @@ const AdminPage = () => {
       <main className="container mx-auto px-4 py-6">
         {tab === "orders" && <AdminOrders />}
         {tab === "menu" && <AdminMenu />}
+        {tab === "qrcodes" && <AdminQRCodes />}
       </main>
     </div>
   );
