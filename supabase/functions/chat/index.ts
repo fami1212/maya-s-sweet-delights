@@ -227,6 +227,10 @@ async function callAIWithTools(messages: any[], apiKey: string, maxRounds = 3): 
     }
 
     const { message: aiMessage, finish_reason } = await parseSSEResponse(response);
+    console.log(`Round ${round}: finish_reason=${finish_reason}, tool_calls=${aiMessage.tool_calls?.length || 0}, content_len=${aiMessage.content?.length || 0}`);
+    if (aiMessage.tool_calls?.length) {
+      console.log("Tool calls:", JSON.stringify(aiMessage.tool_calls.map((tc: any) => ({ name: tc.function.name, args: tc.function.arguments }))));
+    }
 
     // No tool calls → stream final response
     if (!aiMessage.tool_calls || aiMessage.tool_calls.length === 0) {
