@@ -9,38 +9,39 @@ const corsHeaders = {
 const SYSTEM_PROMPT = `Tu es l'assistant virtuel de Maya's, une crêperie, fast food et glacier au Sénégal. Tu réponds toujours en français de manière chaleureuse et professionnelle.
 
 RÈGLES IMPORTANTES :
-- Tu ne connais PAS l'adresse exacte, le numéro de téléphone, ni les horaires d'ouverture de Maya's. Si on te les demande, dis poliment que tu n'as pas cette information et invite le client à consulter les réseaux sociaux de Maya's pour les infos à jour.
-- N'INVENTE JAMAIS d'adresse, numéro de téléphone, horaires ou informations de contact. C'est INTERDIT.
-- Si un client a une réclamation ou un problème, note-le attentivement, montre de l'empathie, et dis-lui que sa réclamation sera transmise à l'équipe Maya's. Demande-lui son nom et son numéro pour qu'on puisse le recontacter.
+- Tu ne connais PAS l'adresse exacte, le numéro de téléphone, ni les horaires d'ouverture de Maya's. Si on te les demande, dis poliment que tu n'as pas cette information et invite le client à consulter les réseaux sociaux de Maya's.
+- N'INVENTE JAMAIS d'adresse, numéro de téléphone, horaires ou informations de contact.
+- Si un client a une réclamation, montre de l'empathie, note les détails, et dis que sa réclamation sera transmise à l'équipe. Demande son nom et numéro pour qu'on puisse le recontacter.
 
 Tu aides les clients avec :
-- Les questions sur le menu (utilise l'outil get_menu pour voir les plats disponibles et leurs prix)
-- Les suggestions de plats selon les goûts du client
-- La prise de commande directe via l'outil place_order
+- Les questions sur le menu (utilise get_menu pour voir les plats disponibles et prix)
+- Les suggestions de plats
+- La prise de commande via place_order
 
 PROCESSUS DE COMMANDE :
 1. Quand un client veut commander, utilise d'abord get_menu pour voir les plats disponibles
-2. Aide-le à choisir ses plats, confirme les quantités
-3. Demande son nom et son numéro de téléphone
-4. Une fois toutes les infos réunies, utilise place_order pour enregistrer la commande
-5. Confirme la commande avec un récapitulatif (plats, quantités, prix total)
+2. Aide-le à choisir, confirme les quantités
+3. Demande son nom et numéro de téléphone
+4. Utilise place_order pour enregistrer la commande
+5. Confirme avec un récapitulatif (plats, quantités, prix total)
 
-IMPORTANT : Utilise TOUJOURS les outils disponibles. Ne dis jamais au client d'aller sur le site pour commander - tu peux le faire toi-même !
+Si le client donne TOUT en une seule fois (plats + nom + téléphone), utilise d'abord get_menu pour vérifier les plats et prix, puis place_order.
 
-Les prix sont en FCFA. Sois concis et amical. Utilise des emojis de temps en temps. 💖`;
+IMPORTANT : Utilise TOUJOURS les outils. Ne dis jamais au client d'aller sur le site pour commander.
+Les prix sont en FCFA. Sois concis et amical. 💖`;
 
 const tools = [
   {
     type: "function",
     function: {
       name: "get_menu",
-      description: "Récupère la liste complète du menu avec les catégories, plats disponibles et prix en FCFA",
+      description: "Récupère le menu complet avec catégories, plats disponibles et prix en FCFA",
       parameters: {
         type: "object",
         properties: {
           category: {
             type: "string",
-            description: "Filtrer par catégorie (optionnel) : 'Crêperie', 'Fast Food', ou 'Glacier'"
+            description: "Filtrer par catégorie (optionnel)"
           }
         },
         required: [],
@@ -52,49 +53,29 @@ const tools = [
     type: "function",
     function: {
       name: "place_order",
-      description: "Enregistre une commande dans la base de données. Utilise cet outil quand le client a confirmé ses plats, quantités, nom et téléphone.",
+      description: "Enregistre une commande. Appelle TOUJOURS get_menu d'abord pour obtenir les vrais IDs et prix.",
       parameters: {
         type: "object",
         properties: {
-          customer_name: {
-            type: "string",
-            description: "Nom du client"
-          },
-          customer_phone: {
-            type: "string",
-            description: "Numéro de téléphone du client"
-          },
+          customer_name: { type: "string", description: "Nom du client" },
+          customer_phone: { type: "string", description: "Téléphone du client" },
           items: {
             type: "array",
-            description: "Liste des articles commandés",
+            description: "Articles commandés",
             items: {
               type: "object",
               properties: {
-                menu_item_id: {
-                  type: "string",
-                  description: "UUID de l'article du menu"
-                },
-                name: {
-                  type: "string",
-                  description: "Nom de l'article (pour confirmation)"
-                },
-                quantity: {
-                  type: "number",
-                  description: "Quantité commandée"
-                },
-                unit_price: {
-                  type: "number",
-                  description: "Prix unitaire en FCFA"
-                }
+                menu_item_id: { type: "string", description: "UUID de l'article du menu (obtenu via get_menu)" },
+                name: { type: "string", description: "Nom de l'article" },
+                quantity: { type: "number", description: "Quantité" },
+                unit_price: { type: "number", description: "Prix unitaire en FCFA (obtenu via get_menu)" }
               },
               required: ["menu_item_id", "quantity", "unit_price"],
               additionalProperties: false
             }
           },
-          notes: {
-            type: "string",
-            description: "Notes ou instructions spéciales (optionnel)"
-          }
+          notes: { type: "string", description: "Notes spéciales (optionnel)" },
+          table_number: { type: "number", description: "Numéro de table si le client est sur place (optionnel)" }
         },
         required: ["customer_name", "customer_phone", "items"],
         additionalProperties: false
@@ -112,19 +93,17 @@ function getSupabaseAdmin() {
 
 async function handleGetMenu(args: { category?: string }) {
   const supabase = getSupabaseAdmin();
-  
-  let query = supabase
+  const { data: items, error } = await supabase
     .from("menu_items")
     .select("id, name, description, price, available, category_id, categories(name, emoji)")
     .eq("available", true)
     .order("sort_order");
 
-  const { data: items, error } = await query;
   if (error) throw new Error(`Erreur menu: ${error.message}`);
 
   let filtered = items || [];
   if (args.category) {
-    filtered = filtered.filter((i: any) => 
+    filtered = filtered.filter((i: any) =>
       i.categories?.name?.toLowerCase().includes(args.category!.toLowerCase())
     );
   }
@@ -133,14 +112,8 @@ async function handleGetMenu(args: { category?: string }) {
   for (const item of filtered) {
     const catName = `${item.categories?.emoji || ''} ${item.categories?.name || 'Autre'}`.trim();
     if (!grouped[catName]) grouped[catName] = [];
-    grouped[catName].push({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      price: item.price,
-    });
+    grouped[catName].push({ id: item.id, name: item.name, description: item.description, price: item.price });
   }
-
   return JSON.stringify(grouped, null, 2);
 }
 
@@ -149,21 +122,27 @@ async function handlePlaceOrder(args: {
   customer_phone: string;
   items: Array<{ menu_item_id: string; name?: string; quantity: number; unit_price: number }>;
   notes?: string;
+  table_number?: number;
 }) {
   const supabase = getSupabaseAdmin();
-
   const total = args.items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const orderId = crypto.randomUUID();
 
-  const { error: orderError } = await supabase.from("orders").insert({
+  const noteParts = ["Commande via chatbot IA"];
+  if (args.table_number) noteParts.push(`Table ${args.table_number}`);
+  if (args.notes) noteParts.push(args.notes);
+
+  const orderData: any = {
     id: orderId,
     customer_name: args.customer_name,
     customer_phone: args.customer_phone,
     total,
     status: "pending",
-    notes: args.notes || "Commande via chatbot IA",
-  });
+    notes: noteParts.join(" | "),
+  };
+  if (args.table_number) orderData.table_number = args.table_number;
 
+  const { error: orderError } = await supabase.from("orders").insert(orderData);
   if (orderError) throw new Error(`Erreur commande: ${orderError.message}`);
 
   const orderItems = args.items.map((item) => ({
@@ -172,7 +151,6 @@ async function handlePlaceOrder(args: {
     quantity: item.quantity,
     unit_price: item.unit_price,
   }));
-
   const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
   if (itemsError) throw new Error(`Erreur articles: ${itemsError.message}`);
 
@@ -181,45 +159,99 @@ async function handlePlaceOrder(args: {
     order_id: orderId,
     total,
     items_count: args.items.length,
-    message: `Commande #${orderId.slice(0, 8)} enregistrée avec succès !`
+    message: `Commande #${orderId.slice(0, 8)} enregistrée !`
   });
 }
 
-async function callAIWithTools(messages: any[], apiKey: string): Promise<ReadableStream> {
-  // First call: may return tool_calls
-  const firstResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-      tools,
-      stream: false,
-    }),
-  });
+// Parse a complete SSE response into a single message object
+async function parseSSEResponse(response: Response): Promise<any> {
+  const text = await response.text();
+  const lines = text.split("\n");
+  let fullContent = "";
+  let toolCalls: any[] = [];
+  let role = "assistant";
+  let finishReason = "";
 
-  if (!firstResponse.ok) {
-    const t = await firstResponse.text();
-    throw new Error(`AI error ${firstResponse.status}: ${t}`);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data: ")) continue;
+    const jsonStr = trimmed.slice(6).trim();
+    if (jsonStr === "[DONE]") break;
+
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const choice = parsed.choices?.[0];
+      if (!choice) continue;
+
+      if (choice.delta?.role) role = choice.delta.role;
+      if (choice.delta?.content) fullContent += choice.delta.content;
+      if (choice.finish_reason) finishReason = choice.finish_reason;
+
+      if (choice.delta?.tool_calls) {
+        for (const tc of choice.delta.tool_calls) {
+          const idx = tc.index ?? 0;
+          if (!toolCalls[idx]) {
+            toolCalls[idx] = { id: tc.id || "", type: "function", function: { name: "", arguments: "" } };
+          }
+          if (tc.id) toolCalls[idx].id = tc.id;
+          if (tc.function?.name) toolCalls[idx].function.name = tc.function.name;
+          if (tc.function?.arguments) toolCalls[idx].function.arguments += tc.function.arguments;
+        }
+      }
+    } catch {
+      // skip malformed chunks
+    }
   }
 
-  const firstResult = await firstResponse.json();
-  const choice = firstResult.choices?.[0];
+  const message: any = { role, content: fullContent || null };
+  if (toolCalls.length > 0) message.tool_calls = toolCalls;
+  return { message, finish_reason: finishReason };
+}
 
-  if (choice?.finish_reason === "tool_calls" || choice?.message?.tool_calls?.length > 0) {
-    const toolCalls = choice.message.tool_calls;
-    const toolMessages = [
-      ...messages,
-      choice.message, // assistant message with tool_calls
-    ];
+async function callAIWithTools(messages: any[], apiKey: string, maxRounds = 3): Promise<ReadableStream> {
+  let conversationMessages = [...messages];
 
-    // Execute all tool calls
-    for (const tc of toolCalls) {
+  for (let round = 0; round < maxRounds; round++) {
+    // Call AI (always streaming so we can parse uniformly)
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...conversationMessages],
+        tools,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const t = await response.text();
+      throw new Error(`AI error ${response.status}: ${t}`);
+    }
+
+    const { message: aiMessage, finish_reason } = await parseSSEResponse(response);
+    console.log(`Round ${round}: finish_reason=${finish_reason}, tool_calls=${aiMessage.tool_calls?.length || 0}, content_len=${aiMessage.content?.length || 0}`);
+    if (aiMessage.tool_calls?.length) {
+      console.log("Tool calls:", JSON.stringify(aiMessage.tool_calls.map((tc: any) => ({ name: tc.function.name, args: tc.function.arguments }))));
+    }
+
+    // No tool calls → stream final response
+    if (!aiMessage.tool_calls || aiMessage.tool_calls.length === 0) {
+      // We already consumed the response, so create a synthetic SSE stream from the content
+      return createSSEStream(aiMessage.content || "");
+    }
+
+    // Process tool calls
+    conversationMessages.push(aiMessage);
+
+    for (const tc of aiMessage.tool_calls) {
       const fnName = tc.function.name;
-      const fnArgs = JSON.parse(tc.function.arguments || "{}");
+      let fnArgs: any;
+      try {
+        fnArgs = JSON.parse(tc.function.arguments || "{}");
+      } catch {
+        fnArgs = {};
+      }
       let result: string;
 
       try {
@@ -234,56 +266,47 @@ async function callAIWithTools(messages: any[], apiKey: string): Promise<Readabl
         result = JSON.stringify({ error: e instanceof Error ? e.message : "Erreur inconnue" });
       }
 
-      toolMessages.push({
+      console.log(`Tool ${fnName} result:`, result.slice(0, 200));
+
+      conversationMessages.push({
         role: "tool",
         tool_call_id: tc.id,
         content: result,
       });
     }
-
-    // Second call: stream the final response with tool results
-    const secondResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...toolMessages],
-        stream: true,
-      }),
-    });
-
-    if (!secondResponse.ok) {
-      const t = await secondResponse.text();
-      throw new Error(`AI error on second call ${secondResponse.status}: ${t}`);
-    }
-
-    return secondResponse.body!;
   }
 
-  // No tool calls: stream directly
-  // Re-call with streaming since first was non-streaming
-  const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  // Max rounds reached, do final streaming call without tools
+  const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...conversationMessages],
       stream: true,
     }),
   });
 
-  if (!streamResponse.ok) {
-    const t = await streamResponse.text();
-    throw new Error(`AI stream error ${streamResponse.status}: ${t}`);
+  if (!finalResponse.ok) {
+    const t = await finalResponse.text();
+    throw new Error(`AI final error ${finalResponse.status}: ${t}`);
   }
 
-  return streamResponse.body!;
+  return finalResponse.body!;
+}
+
+function createSSEStream(content: string): ReadableStream {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      const chunk = {
+        choices: [{ index: 0, delta: { content, role: "assistant" }, finish_reason: "stop" }],
+      };
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
 }
 
 serve(async (req) => {

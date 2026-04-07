@@ -3,12 +3,13 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import AdminLogin from "@/components/admin/AdminLogin";
 import AdminMenu from "@/components/admin/AdminMenu";
 import AdminOrders from "@/components/admin/AdminOrders";
-import { LogOut, UtensilsCrossed, ShoppingBag } from "lucide-react";
+import AdminQRCodes from "@/components/admin/AdminQRCodes";
+import { LogOut, UtensilsCrossed, ShoppingBag, QrCode } from "lucide-react";
 import logo from "@/assets/mayas-logo.png";
 
 const AdminPage = () => {
   const { session, isAdmin, loading, signIn, signOut } = useAdminAuth();
-  const [tab, setTab] = useState<"orders" | "menu">("orders");
+  const [tab, setTab] = useState<"orders" | "menu" | "qrcodes">("orders");
 
   if (loading) {
     return (
@@ -58,6 +59,12 @@ const AdminPage = () => {
             >
               <UtensilsCrossed className="h-4 w-4" /> Menu
             </button>
+            <button
+              onClick={() => setTab("qrcodes")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all ${tab === "qrcodes" ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}
+            >
+              <QrCode className="h-4 w-4" /> QR Codes
+            </button>
             <button onClick={signOut} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
               <LogOut className="h-5 w-5" />
             </button>
@@ -75,6 +82,10 @@ const AdminPage = () => {
           <button onClick={() => setTab("menu")} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${tab === "menu" ? "text-primary" : "text-muted-foreground"}`}>
             <UtensilsCrossed className="h-5 w-5" />
             <span className="text-[10px] font-medium">Menu</span>
+          </button>
+          <button onClick={() => setTab("qrcodes")} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${tab === "qrcodes" ? "text-primary" : "text-muted-foreground"}`}>
+            <QrCode className="h-5 w-5" />
+            <span className="text-[10px] font-medium">QR</span>
           </button>
           <button onClick={signOut} className="flex flex-col items-center gap-0.5 px-3 py-1 text-muted-foreground">
             <LogOut className="h-5 w-5" />
@@ -94,6 +105,7 @@ const AdminPage = () => {
       <main className="container mx-auto px-4 py-6">
         {tab === "orders" && <AdminOrders />}
         {tab === "menu" && <AdminMenu />}
+        {tab === "qrcodes" && <AdminQRCodes />}
       </main>
     </div>
   );

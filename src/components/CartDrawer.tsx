@@ -1,5 +1,6 @@
 import { X, Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useTable } from "@/context/TableContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -11,6 +12,7 @@ interface CartDrawerProps {
 
 const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
   const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
+  const { tableNumber } = useTable();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -26,15 +28,19 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
     try {
       const orderId = crypto.randomUUID();
 
-      const { error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          id: orderId,
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim(),
-          total: totalPrice,
-          status: "pending",
-        });
+      const orderData: any = {
+        id: orderId,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        total: totalPrice,
+        status: "pending",
+      };
+      if (tableNumber) {
+        orderData.table_number = tableNumber;
+        orderData.notes = `Table ${tableNumber}`;
+      }
+
+      const { error: orderError } = await supabase.from("orders").insert(orderData);
 
       if (orderError) throw orderError;
 

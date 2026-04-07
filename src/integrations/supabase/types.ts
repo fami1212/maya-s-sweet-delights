@@ -135,6 +135,7 @@ export type Database = {
           id: string
           notes: string | null
           status: string
+          table_number: number | null
           total: number
           updated_at: string
         }
@@ -145,6 +146,7 @@ export type Database = {
           id?: string
           notes?: string | null
           status?: string
+          table_number?: number | null
           total?: number
           updated_at?: string
         }
@@ -155,6 +157,7 @@ export type Database = {
           id?: string
           notes?: string | null
           status?: string
+          table_number?: number | null
           total?: number
           updated_at?: string
         }
