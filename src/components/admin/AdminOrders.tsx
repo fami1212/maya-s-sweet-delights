@@ -10,6 +10,7 @@ interface Order {
   status: string;
   total: number;
   notes: string | null;
+  table_number: number | null;
   created_at: string;
 }
 
