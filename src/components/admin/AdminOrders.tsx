@@ -101,12 +101,18 @@ const AdminOrders = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold">{order.customer_name}</span>
+                    {order.table_number && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                        📍 Table {order.table_number}
+                      </span>
+                    )}
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>
                       {info.icon} {info.label}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">{order.customer_phone}</p>
                   <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("fr-FR")}</p>
+                  {order.notes && <p className="text-xs text-muted-foreground italic mt-0.5">{order.notes}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-primary">{Number(order.total).toLocaleString()} FCFA</span>
