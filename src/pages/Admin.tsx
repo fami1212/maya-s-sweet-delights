@@ -3,7 +3,8 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import AdminLogin from "@/components/admin/AdminLogin";
 import AdminMenu from "@/components/admin/AdminMenu";
 import AdminOrders from "@/components/admin/AdminOrders";
-import { LogOut, UtensilsCrossed, ShoppingBag } from "lucide-react";
+import AdminQRCodes from "@/components/admin/AdminQRCodes";
+import { LogOut, UtensilsCrossed, ShoppingBag, QrCode } from "lucide-react";
 import logo from "@/assets/mayas-logo.png";
 
 const AdminPage = () => {
