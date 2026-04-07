@@ -59,6 +59,12 @@ const AdminPage = () => {
             >
               <UtensilsCrossed className="h-4 w-4" /> Menu
             </button>
+            <button
+              onClick={() => setTab("qrcodes")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all ${tab === "qrcodes" ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}
+            >
+              <QrCode className="h-4 w-4" /> QR Codes
+            </button>
             <button onClick={signOut} className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
               <LogOut className="h-5 w-5" />
             </button>
