@@ -28,15 +28,19 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
     try {
       const orderId = crypto.randomUUID();
 
-      const { error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          id: orderId,
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim(),
-          total: totalPrice,
-          status: "pending",
-        });
+      const orderData: any = {
+        id: orderId,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        total: totalPrice,
+        status: "pending",
+      };
+      if (tableNumber) {
+        orderData.table_number = tableNumber;
+        orderData.notes = `Table ${tableNumber}`;
+      }
+
+      const { error: orderError } = await supabase.from("orders").insert(orderData);
 
       if (orderError) throw orderError;
 
