@@ -10,6 +10,8 @@ interface CartDrawerProps {
   onClose: () => void;
 }
 
+const TRACKING_STORAGE_KEY = "maya-active-order";
+
 const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
   const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
   const { tableNumber } = useTable();
@@ -27,21 +29,23 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
     setSubmitting(true);
     try {
       const orderId = crypto.randomUUID();
+      const trimmedName = customerName.trim();
+      const trimmedPhone = customerPhone.trim();
 
-      const orderData: any = {
+      const orderData: Record<string, string | number> = {
         id: orderId,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
+        customer_name: trimmedName,
+        customer_phone: trimmedPhone,
         total: totalPrice,
         status: "pending",
       };
+
       if (tableNumber) {
         orderData.table_number = tableNumber;
         orderData.notes = `Table ${tableNumber}`;
       }
 
       const { error: orderError } = await supabase.from("orders").insert(orderData);
-
       if (orderError) throw orderError;
 
       const orderItems = items.map((item) => ({
@@ -54,7 +58,17 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
-      toast.success("Commande envoyée avec succès ! 💖");
+      window.localStorage.setItem(
+        TRACKING_STORAGE_KEY,
+        JSON.stringify({
+          orderId,
+          customerName: trimmedName,
+          customerPhone: trimmedPhone,
+        }),
+      );
+      window.dispatchEvent(new Event("maya-order-tracking-updated"));
+
+      toast.success("Commande envoyée avec succès ! Suivez maintenant son avancement en direct 💖");
       clearCart();
       setCustomerName("");
       setCustomerPhone("");
