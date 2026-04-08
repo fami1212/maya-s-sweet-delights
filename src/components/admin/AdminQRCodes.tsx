@@ -6,9 +6,9 @@ const AdminQRCodes = () => {
   const [numTables, setNumTables] = useState(10);
   const [copied, setCopied] = useState<number | null>(null);
 
-  const baseUrl = window.location.origin;
+  const baseUrl = "https://maya-s-sweet.vercel.app";
 
-  const getTableUrl = (table: number) => `${baseUrl}/?table=${table}`;
+  const getTableUrl = (table: number) => `${baseUrl}/?table=${table}#menu`;
 
   const getQRImageUrl = (table: number) =>
     `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(getTableUrl(table))}`;
