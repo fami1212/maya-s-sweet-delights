@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CartProvider } from "@/context/CartContext";
 import { TableProvider, useTable } from "@/context/TableContext";
 import Navbar from "@/components/Navbar";
@@ -23,6 +23,16 @@ const IndexContent = () => {
   const [activeTab, setActiveTab] = useState("home");
   const menuRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const { tableNumber } = useTable();
+
+  useEffect(() => {
+    if (tableNumber || window.location.hash === "#menu") {
+      setTimeout(() => {
+        menuRef.current?.scrollIntoView({ behavior: "smooth" });
+        setActiveTab("menu");
+      }, 500);
+    }
+  }, [tableNumber]);
 
   const scrollToMenu = () => {
     menuRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,7 +49,7 @@ const IndexContent = () => {
       <TableBanner />
       <Navbar onCartClick={() => setCartOpen(true)} />
       <HeroSection onOrderClick={scrollToMenu} />
-      <div ref={menuRef}>
+      <div ref={menuRef} id="menu">
         <MenuSection />
       </div>
       <footer className="bg-secondary py-8 text-center">
