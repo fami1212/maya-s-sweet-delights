@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Eye, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Eye, Clock, CheckCircle, XCircle, Printer } from "lucide-react";
 
 interface Order {
   id: string;
@@ -22,11 +22,11 @@ interface OrderItem {
 }
 
 const statusLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: "En attente", color: "bg-yellow-100 text-yellow-800", icon: <Clock className="h-4 w-4" /> },
-  preparing: { label: "En préparation", color: "bg-blue-100 text-blue-800", icon: <Clock className="h-4 w-4" /> },
-  ready: { label: "Prêt", color: "bg-green-100 text-green-800", icon: <CheckCircle className="h-4 w-4" /> },
+  pending: { label: "En attente", color: "bg-secondary text-secondary-foreground", icon: <Clock className="h-4 w-4" /> },
+  preparing: { label: "En préparation", color: "bg-accent text-accent-foreground", icon: <Clock className="h-4 w-4" /> },
+  ready: { label: "Prêt", color: "bg-primary text-primary-foreground", icon: <CheckCircle className="h-4 w-4" /> },
   completed: { label: "Terminé", color: "bg-muted text-muted-foreground", icon: <CheckCircle className="h-4 w-4" /> },
-  cancelled: { label: "Annulé", color: "bg-red-100 text-red-800", icon: <XCircle className="h-4 w-4" /> },
+  cancelled: { label: "Annulé", color: "bg-destructive text-destructive-foreground", icon: <XCircle className="h-4 w-4" /> },
 };
 
 const statuses = ["pending", "preparing", "ready", "completed", "cancelled"];
@@ -37,31 +37,153 @@ const AdminOrders = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const loadOrders = async () => {
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (data) setOrders(data);
-  };
+  const loadOrders = useCallback(async () => {
+    const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    if (error) {
+      console.error("Erreur chargement commandes:", error);
+      return;
+    }
+    setOrders((data || []) as Order[]);
+  }, []);
 
-  useEffect(() => { loadOrders(); }, []);
-
-  const viewOrder = async (orderId: string) => {
-    setSelectedOrder(selectedOrder === orderId ? null : orderId);
-    if (selectedOrder === orderId) return;
-    const { data } = await supabase
+  const loadOrderItems = useCallback(async (orderId: string) => {
+    const { data, error } = await supabase
       .from("order_items")
       .select("*, menu_items(name)")
       .eq("order_id", orderId);
-    if (data) setOrderItems(data as OrderItem[]);
+
+    if (error) {
+      console.error("Erreur chargement articles:", error);
+      return [] as OrderItem[];
+    }
+
+    const parsed = (data || []) as OrderItem[];
+    setOrderItems(parsed);
+    return parsed;
+  }, []);
+
+  useEffect(() => {
+    void loadOrders();
+
+    const polling = window.setInterval(() => {
+      void loadOrders();
+    }, 5000);
+
+    const channel = supabase
+      .channel("admin-orders-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        void loadOrders();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => {
+        if (selectedOrder) {
+          void loadOrderItems(selectedOrder);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      window.clearInterval(polling);
+      void supabase.removeChannel(channel);
+    };
+  }, [loadOrderItems, loadOrders, selectedOrder]);
+
+  useEffect(() => {
+    if (!selectedOrder) {
+      setOrderItems([]);
+      return;
+    }
+
+    void loadOrderItems(selectedOrder);
+
+    const polling = window.setInterval(() => {
+      void loadOrderItems(selectedOrder);
+    }, 5000);
+
+    return () => {
+      window.clearInterval(polling);
+    };
+  }, [loadOrderItems, selectedOrder]);
+
+  const viewOrder = async (orderId: string) => {
+    if (selectedOrder === orderId) {
+      setSelectedOrder(null);
+      setOrderItems([]);
+      return;
+    }
+
+    setSelectedOrder(orderId);
+    await loadOrderItems(orderId);
   };
 
   const updateStatus = async (orderId: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
-    if (error) { toast.error("Erreur mise à jour"); return; }
+    if (error) {
+      toast.error("Erreur mise à jour");
+      return;
+    }
+
     toast.success(`Commande ${statusLabels[status]?.label || status}`);
-    loadOrders();
+    void loadOrders();
+  };
+
+  const printReceipt = async (order: Order) => {
+    const printWindow = window.open("", "_blank", "width=420,height=720");
+
+    if (!printWindow) {
+      toast.error("Autorisez les fenêtres pop-up pour imprimer le reçu.");
+      return;
+    }
+
+    const items = await loadOrderItems(order.id);
+    const status = statusLabels[order.status]?.label || order.status;
+    const itemRows = items
+      .map(
+        (item) => `
+          <tr>
+            <td>${item.quantity} × ${item.menu_items?.name || "Article"}</td>
+            <td style="text-align:right;">${(Number(item.unit_price) * item.quantity).toLocaleString("fr-FR")} FCFA</td>
+          </tr>
+        `,
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <html lang="fr">
+        <head>
+          <title>Reçu ${order.id.slice(0, 8).toUpperCase()}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 24px; color: #111; }
+            .receipt { max-width: 360px; margin: 0 auto; }
+            h1 { margin: 0 0 8px; font-size: 24px; }
+            p { margin: 4px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+            td { padding: 8px 0; border-bottom: 1px dashed #ccc; font-size: 14px; }
+            .total { font-size: 18px; font-weight: 700; margin-top: 16px; }
+            .muted { color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <h1>Maya's</h1>
+            <p>Reçu de commande</p>
+            <p class="muted">Réf. #${order.id.slice(0, 8).toUpperCase()}</p>
+            <p class="muted">${new Date(order.created_at).toLocaleString("fr-FR")}</p>
+            <p><strong>Client :</strong> ${order.customer_name}</p>
+            <p><strong>Téléphone :</strong> ${order.customer_phone}</p>
+            ${order.table_number ? `<p><strong>Table :</strong> ${order.table_number}</p>` : ""}
+            <p><strong>Statut :</strong> ${status}</p>
+            ${order.notes ? `<p><strong>Note :</strong> ${order.notes}</p>` : ""}
+            <table>
+              <tbody>${itemRows}</tbody>
+            </table>
+            <p class="total">Total : ${Number(order.total).toLocaleString("fr-FR")} FCFA</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   };
 
   const filtered = filterStatus === "all" ? orders : orders.filter((o) => o.status === filterStatus);
@@ -116,12 +238,19 @@ const AdminOrders = () => {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-primary">{Number(order.total).toLocaleString()} FCFA</span>
-                  <button onClick={() => viewOrder(order.id)} className="p-2 rounded-full hover:bg-secondary transition-colors">
+                  <button
+                    onClick={() => void printReceipt(order)}
+                    className="inline-flex items-center justify-center p-2 rounded-full bg-secondary text-secondary-foreground hover:bg-accent transition-colors"
+                    aria-label="Imprimer le reçu"
+                  >
+                    <Printer className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => void viewOrder(order.id)} className="p-2 rounded-full hover:bg-secondary transition-colors">
                     <Eye className="h-4 w-4" />
                   </button>
                   <select
                     value={order.status}
-                    onChange={(e) => updateStatus(order.id, e.target.value)}
+                    onChange={(e) => void updateStatus(order.id, e.target.value)}
                     className="text-sm px-2 py-1 rounded-lg border border-border bg-background"
                   >
                     {statuses.map((s) => (

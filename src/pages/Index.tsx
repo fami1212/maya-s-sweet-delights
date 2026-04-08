@@ -7,6 +7,7 @@ import MenuSection from "@/components/MenuSection";
 import CartDrawer from "@/components/CartDrawer";
 import BottomNav from "@/components/BottomNav";
 import ChatBot from "@/components/ChatBot";
+import OrderStatusTracker from "@/components/OrderStatusTracker";
 
 const TableBanner = () => {
   const { tableNumber } = useTable();
@@ -49,6 +50,7 @@ const IndexContent = () => {
       <TableBanner />
       <Navbar onCartClick={() => setCartOpen(true)} />
       <HeroSection onOrderClick={scrollToMenu} />
+      <OrderStatusTracker />
       <div ref={menuRef} id="menu">
         <MenuSection />
       </div>
