@@ -40,14 +40,17 @@ const MenuSection = () => {
 
   return (
     <div className="overflow-x-hidden">
+      {/* Title ABOVE the sticky category bar */}
+      <div className="container mx-auto px-4 pt-10 pb-4 text-center">
+        <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+          Notre Menu
+        </h2>
+        <p className="text-muted-foreground mt-2">Découvrez nos délicieuses spécialités ✨</p>
+      </div>
+
       <CategoryBar activeCategory={activeCategory} onSelect={setActiveCategory} />
-      <div className="container mx-auto px-4 py-10">
-        <div className="text-center mb-10">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
-            Notre Menu
-          </h2>
-          <p className="text-muted-foreground mt-2">Découvrez nos délicieuses spécialités ✨</p>
-        </div>
+
+      <div className="container mx-auto px-4 py-6">
         {grouped.map((group) => (
           <div key={group.id} className="mb-12">
             <div className="flex items-center gap-3 mb-5">
