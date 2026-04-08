@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { CheckCircle2, Clock3, LoaderCircle, ReceiptText, X } from "lucide-react";
 
 const STORAGE_KEY = "maya-active-order";
@@ -19,7 +20,7 @@ type LiveOrder = {
   updated_at: string;
 };
 
-const statusMeta: Record<string, { label: string; tone: string; icon: JSX.Element }> = {
+const statusMeta: Record<string, { label: string; tone: string; icon: ReactNode }> = {
   pending: {
     label: "En attente",
     tone: "bg-secondary text-secondary-foreground",
@@ -99,7 +100,7 @@ const OrderStatusTracker = () => {
 
     const loadStatus = async () => {
       try {
-        if (isMounted && !order) {
+        if (isMounted) {
           setLoading(true);
         }
 
@@ -145,7 +146,7 @@ const OrderStatusTracker = () => {
       isMounted = false;
       window.clearInterval(interval);
     };
-  }, [storedOrder, order]);
+  }, [storedOrder]);
 
   const currentStatus = useMemo(() => {
     if (!order) return null;

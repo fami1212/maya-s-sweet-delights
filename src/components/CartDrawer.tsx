@@ -32,18 +32,19 @@ const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
       const trimmedName = customerName.trim();
       const trimmedPhone = customerPhone.trim();
 
-      const orderData: Record<string, string | number> = {
+      const orderData = {
         id: orderId,
         customer_name: trimmedName,
         customer_phone: trimmedPhone,
         total: totalPrice,
         status: "pending",
+        ...(tableNumber
+          ? {
+              table_number: tableNumber,
+              notes: `Table ${tableNumber}`,
+            }
+          : {}),
       };
-
-      if (tableNumber) {
-        orderData.table_number = tableNumber;
-        orderData.notes = `Table ${tableNumber}`;
-      }
 
       const { error: orderError } = await supabase.from("orders").insert(orderData);
       if (orderError) throw orderError;
